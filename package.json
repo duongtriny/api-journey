@@ -1,0 +1,27 @@
+{
+  "name": "api-journey",
+  "version": "1.0.0",
+  "description": "project support learning api",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/duongtriny/api-journey.git"
+  },
+  "keywords": [
+    "api"
+  ],
+  "author": "Tho Test aka Test With Me",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/duongtriny/api-journey/issues"
+  },
+  "homepage": "https://github.com/duongtriny/api-journey#readme",
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}

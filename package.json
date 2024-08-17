@@ -6,7 +6,8 @@
   "type": "module",
   "scripts": {
     "start": "node index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "esbuild index.js --bundle --platform=node --outfile=api-journey.cjs"
   },
   "repository": {
     "type": "git",
@@ -23,5 +24,16 @@
   "homepage": "https://github.com/duongtriny/api-journey#readme",
   "dependencies": {
     "express": "^4.19.2"
+  },
+  "bin": {
+    "api-journey": "./index.js"
+  },
+  "pkg": {
+    "targets": [
+      "latest"
+    ]
+  },
+  "devDependencies": {
+    "esbuild": "0.23.1"
   }
 }

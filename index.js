@@ -3,7 +3,7 @@ import jwt from 'jsonwebtoken';
 import { expressjwt } from 'express-jwt';
 import 'dotenv/config';
 import { getCountry, getCountries, getCountriesWithGdp, getCountriesWithFilter, getCountriesWithPagination, getCountriesWithPrivate } from './api/retrieve.js';
-import { createCustomer } from './api/customer.js';
+import { createCustomer, deleteCustomer, getCustomer, updateCustomer } from './api/customer.js';
 import init from './init-db.js';
 const app = express();
 const port = 3000;
@@ -53,6 +53,9 @@ app.get('/', (req, res) => {
 });
 
 app.post('/api/user', createCustomer);
+app.put('/api/user/:id', updateCustomer);
+app.get('/api/user/:id', getCustomer);
+app.delete('/api/user/:id', deleteCustomer);
 
 app.listen(port, () => {
     init();

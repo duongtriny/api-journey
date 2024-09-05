@@ -11,7 +11,7 @@ const knex = db({
 const customerTable = 'customers';
 const addressTable = 'addresses';
 
-export const createCustomer = (req, res) => {
+export const createCustomer = async (req, res) => {
     const ajv = new Ajv();
     formatsPlugin(ajv);
     const validate = ajv.compile(customerSchema);
@@ -30,18 +30,136 @@ export const createCustomer = (req, res) => {
         ...req.body
     };
     delete customer.addresses;
-    knex(customerTable)
+    await knex(customerTable)
         .insert(customer)
-        .then((data) => {
-            return res.status(200).json({
-                id: generatedId,
-                message: 'Customer created'
-            });
+        .then(async (data) => {
+            if (req.body.addresses) {
+                const addresses = req.body.addresses.map((address) => {
+                    return {
+                        id: v4(),
+                        customerId: generatedId,
+                        createdAt: new Date(),
+                        updatedAt: new Date(),
+                        ...address
+                    };
+                });
+                await knex(addressTable).insert(addresses)
+                    .then((data) => {
+                        return res.status(200).json({
+                            id: generatedId,
+                            message: 'Customer created'
+                        });
+                    })
+                    .catch((error) => {
+                        throw error;
+                    });
+            }
         })
         .catch((error) => {
             if (error.constraint === 'customers_email_phone_unique') {
                 return res.status(400).json({ message: 'Email or phone already exists' });
             }
+            return res.status(500).json({ message: 'Internal server error' });
+        });
+};
+
+export const updateCustomer = async (req, res) => {
+    const ajv = new Ajv();
+    formatsPlugin(ajv);
+    const validate = ajv.compile(customerSchema);
+    const valid = validate(req.body);
+    if (!valid) {
+        return res.status(400).json({
+            field: validate.errors[0].instancePath,
+            message: validate.errors[0].message
+        });
+    }
+    const id = req.params.id;
+    const customer = {
+        updatedAt: new Date(),
+        ...req.body
+    };
+    delete customer.addresses;
+    await knex(customerTable)
+        .where('id', id)
+        .update(customer)
+        .then(async (data) => {
+            if (req.body.addresses) {
+                await knex(addressTable)
+                    .where('customerId', id)
+                    .del()
+                    .then(async (data) => {
+                        const addresses = req.body.addresses.map((address) => {
+                            return {
+                                id: v4(),
+                                customerId: id,
+                                createdAt: new Date(),
+                                updatedAt: new Date(),
+                                ...address
+                            };
+                        });
+                        await knex(addressTable).insert(addresses)
+                            .then((data) => {
+                                return res.status(200).json({
+                                    id: id,
+                                    message: 'Customer updated'
+                                });
+                            })
+                            .catch((error) => {
+                                throw error;
+                            });
+                    })
+                    .catch((error) => {
+                        throw error;
+                    });
+            }
+        })
+        .catch((error) => {
+            return res.status(500).json({ message: 'Internal server error' });
+        });
+};
+
+export const deleteCustomer = async (req, res) => {
+    const id = req.params.id;
+    await knex(addressTable)
+        .where('customerId', id)
+        .del()
+        .then(async (data) => {
+            await knex(customerTable)
+                .where('id', id)
+                .del()
+                .then(async (data) => {
+                    return res.status(200).json({ message: 'Customer deleted' });
+                })
+                .catch((error) => {
+                    throw error;
+                });
+        })
+        .catch((error) => {
+            return res.status(500).json({ message: 'Internal server error' });
+        });
+};
+
+export const getCustomer = async (req, res) => {
+    const id = req.params.id;
+    await knex(customerTable)
+        .where('id', id)
+        .then(async (data) => {
+            if (data.length === 0) {
+                return res.status(404).json({ message: 'Customer not found' });
+            }
+            const customer = data[0];
+            await knex(addressTable)
+                .where('customerId', id)
+                .then((data) => {
+                    customer.addresses = data;
+                    return res.status(200).json(customer);
+                })
+                .catch((error) => {
+                    throw error;
+                });
+        })
+        .catch((error) => {
             return res.status(500).json({ message: 'Internal server error' });
         });
 };

@@ -189,7 +189,7 @@ export const createCard = async (req, res) => {
         name: customer.lastName + ' ' + customer.firstName,
         ...refData
     };
-    axios.post(`${CREATE_CARD_API_HOST}/card-service/build`, card, {
+    axios.post(`${process.env.CREATE_CARD_API_HOST}/card-service/build`, card, {
         headers:{
             'api-key': 'another-private-key'
         }

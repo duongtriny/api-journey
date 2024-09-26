@@ -167,35 +167,39 @@ export const getCustomer = async (req, res) => {
 };
 
 export const createCard = async (req, res) => {
-    const {userId, type} = req.body;
-    const customer = await knex(customerTable).where('id', userId).first();
-    if (!customer) {
-        return res.status(404).json({ message: 'Customer not found' });
-    }
-    const refDataRequest = await axios.get(`${process.env.REF_API_HOST}/get-card-info-by-type`, {
-        params: {
-            type: type
-        },
-        headers: {
-            'api-key': 'a-private-key'
+    try {
+        const { userId, type } = req.body;
+        const customer = await knex(customerTable).where('id', userId).first();
+        if (!customer) {
+            return res.status(404).json({ message: 'Customer not found' });
         }
-    });
-    if (refDataRequest.status !== 200) {
+        const refDataRequest = await axios.get(`${process.env.REF_API_HOST}/get-card-info-by-type`, {
+            params: {
+                type: type
+            },
+            headers: {
+                'api-key': 'a-private-key'
+            }
+        });
+        if (refDataRequest.status !== 200) {
+            return res.status(500).json({ message: 'Internal server error' });
+        }
+        const refData = refDataRequest.data;
+        const card = {
+            id: customer.id,
+            name: customer.lastName + ' ' + customer.firstName,
+            ...refData
+        };
+        axios.post(`${process.env.CREATE_CARD_API_HOST}/card-service/build`, card, {
+            headers: {
+                'api-key': 'another-private-key'
+            }
+        }).then((response) => {
+            return res.status(200).json(response.data);
+        }).catch((error) => {
+            return res.status(500).json({ message: 'Internal server error' });
+        });
+    } catch (ex) {
         return res.status(500).json({ message: 'Internal server error' });
     }
-    const refData = refDataRequest.data;
-    const card = {
-        id: customer.id,
-        name: customer.lastName + ' ' + customer.firstName,
-        ...refData
-    };
-    axios.post(`${process.env.CREATE_CARD_API_HOST}/card-service/build`, card, {
-        headers:{
-            'api-key': 'another-private-key'
-        }
-    }).then((response) => {
-        return res.status(200).json(response.data);
-    }).catch((error) => {
-        return res.status(500).json({ message: 'Internal server error' });
-    });
 };

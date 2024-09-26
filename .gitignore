@@ -5,3 +5,5 @@ app.zip
 abc.json
 *.log
 uploads
+.parcel-cache
+dist

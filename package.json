@@ -2,12 +2,14 @@
   "name": "api-journey",
   "version": "1.0.0",
   "description": "project support learning api",
-  "main": "index.js",
+  "source": "index.js",
+  "main": "dist/main.js",
   "type": "module",
   "scripts": {
     "start": "node index.js & mb --configfile=stubs/imposters.json",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "esbuild index.js --bundle --platform=node --outfile=api-journey.cjs --packages=external"
+    "watch": "parcel watch",
+    "build": "parcel build"
   },
   "repository": {
     "type": "git",
@@ -47,6 +49,7 @@
   },
   "devDependencies": {
     "@types/express-fileupload": "^1.5.1",
-    "esbuild": "0.23.1"
+    "esbuild": "0.23.1",
+    "parcel": "^2.12.0"
   }
 }

@@ -6,12 +6,7 @@ import { getCountry, getCountries, getCountriesWithGdp, getCountriesWithFilter, 
 import { createCard, createCustomer, deleteCustomer, getCustomer, updateCustomer } from './api/customer.js';
 import init from './init-db.js';
 import fileUpload from 'express-fileupload';
-import path from 'path';
-import fs from 'fs';
-import { fileURLToPath } from 'url';
-// Define __filename and __dirname
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+import fs, { mkdir } from 'fs';
 
 const app = express();
 const port = 3000;
@@ -73,25 +68,37 @@ app.post('/api/upload', function (req, res) {
     }
 
     const sampleFile = req.files.file;
-    const uploadPath = path.join(__dirname, 'uploads', sampleFile.name);
-
-    sampleFile.mv(uploadPath, (err) => {
-        if (err) {
-            return res.status(500).send(err);
-        }
-
-        fs.readFile(uploadPath, 'utf8', (err, data) => {
-            if (err) {
-                return res.status(500).send('Error reading file');
+    const uploadPath = `./uploads/${sampleFile.name}`;
+    try {
+        fs.writeFile(uploadPath, new Uint8Array(sampleFile.data),(err)=>{
+            if(err){
+                throw err;
             }
-            res.send(data);
+            res.send({
+                message:"Upload successful!"
+            })
         });
-    });
+    } catch (ex) {
+        return res.status(500).send('Error reading file 2');
+    }
+
+    // sampleFile.mv(uploadPath, (err) => {
+    //     if (err) {
+    //         return res.status(500).send(err);
+    //     }
+
+    //     fs.readFile(uploadPath, 'utf8', (err, data) => {
+    //         if (err) {
+    //             return res.status(500).send('Error reading file');
+    //         }
+    //         res.send(data);
+    //     });
+    // });
 });
 // Endpoint to return a file
 app.get('/api/download/:filename', (req, res) => {
     const filename = req.params.filename;
-    const filePath = path.join(__dirname, 'uploads', filename);
+    const filePath = `./uploads/${filename}`;
 
     res.download(filePath, (err) => {
         if (err) {
@@ -101,5 +108,10 @@ app.get('/api/download/:filename', (req, res) => {
 });
 app.listen(port, () => {
     init();
+    mkdir('./uploads', (err)=>{
+        if(err){
+            throw err;
+        }
+    })
     console.log(`Server is running on port ${port}`);
 });

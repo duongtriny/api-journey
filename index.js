@@ -5,6 +5,14 @@ import 'dotenv/config';
 import { getCountry, getCountries, getCountriesWithGdp, getCountriesWithFilter, getCountriesWithPagination, getCountriesWithPrivate } from './api/retrieve.js';
 import { createCard, createCustomer, deleteCustomer, getCustomer, updateCustomer } from './api/customer.js';
 import init from './init-db.js';
+import fileUpload from 'express-fileupload';
+import path from 'path';
+import fs from 'fs';
+import { fileURLToPath } from 'url';
+// Define __filename and __dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 const app = express();
 const port = 3000;
 const secret = process.env.SECRET;
@@ -16,7 +24,9 @@ app.use(expressjwt({
     secret: secret,
     algorithms: ["HS256"]
 }).unless({ path: ['/', '/api/login', '/api/v1/countries', '/api/v2/countries', '/api/v3/countries', '/api/v4/countries', '/api/v5/countries', /api\/v1\/countries\/.+/] }));
-
+app.use(fileUpload({
+    limits: { fileSize: 50 * 1024 * 1024 },
+}));
 app.get('/api/v1/countries', getCountries);
 app.get('/api/v1/countries/:code', getCountry);
 app.get('/api/v2/countries', getCountriesWithGdp);
@@ -57,7 +67,38 @@ app.put('/api/user/:id', updateCustomer);
 app.get('/api/user/:id', getCustomer);
 app.delete('/api/user/:id', deleteCustomer);
 app.post('/api/card', createCard);
+app.post('/api/upload', function (req, res) {
+    if (!req.files || Object.keys(req.files).length === 0) {
+        return res.status(400).send('No files were uploaded.');
+    }
 
+    const sampleFile = req.files.file;
+    const uploadPath = path.join(__dirname, 'uploads', sampleFile.name);
+
+    sampleFile.mv(uploadPath, (err) => {
+        if (err) {
+            return res.status(500).send(err);
+        }
+
+        fs.readFile(uploadPath, 'utf8', (err, data) => {
+            if (err) {
+                return res.status(500).send('Error reading file');
+            }
+            res.send(data);
+        });
+    });
+});
+// Endpoint to return a file
+app.get('/api/download/:filename', (req, res) => {
+    const filename = req.params.filename;
+    const filePath = path.join(__dirname, 'uploads', filename);
+
+    res.download(filePath, (err) => {
+        if (err) {
+            return res.status(500).send('Error downloading file');
+        }
+    });
+});
 app.listen(port, () => {
     init();
     console.log(`Server is running on port ${port}`);

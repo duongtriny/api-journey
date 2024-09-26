@@ -169,7 +169,7 @@ export const getCustomer = async (req, res) => {
 export const createCard = async (req, res) => {
     const {userId, type} = req.body;
     const customer = await knex(customerTable).where('id', userId).first();
-    if (customer.length === 0) {
+    if (!customer) {
         return res.status(404).json({ message: 'Customer not found' });
     }
     const refDataRequest = await axios.get(`${process.env.REF_API_HOST}/get-card-info-by-type`, {

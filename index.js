@@ -1,17 +1,17 @@
 import express from 'express';
-import jwt from 'jsonwebtoken';
 import { expressjwt } from 'express-jwt';
 import 'dotenv/config';
 import { getCountry, getCountries, getCountriesWithGdp, getCountriesWithFilter, getCountriesWithPagination, getCountriesWithPrivate } from './api/retrieve.js';
 import { createCard, createCustomer, deleteCustomer, getCustomer, updateCustomer } from './api/customer.js';
 import init from './init-db.js';
 import fileUpload from 'express-fileupload';
-import fs, { mkdir } from 'fs';
+import { mkdir } from 'fs';
+import { downloadFile, uploadFile, folderPath } from './api/upload.js';
+import { login } from './api/login.js';
 
 const app = express();
 const port = 3000;
 const secret = process.env.SECRET;
-const timeout = Number.parseInt(process.env.TIMEOUT);
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -29,29 +29,7 @@ app.get('/api/v3/countries', getCountriesWithFilter);
 app.get('/api/v4/countries', getCountriesWithPagination);
 app.get('/api/v5/countries', getCountriesWithPrivate);
 
-app.post('/api/login', (req, res) => {
-    // Mock user
-    const users = [{
-        id: 1,
-        username: 'admin',
-        role: 'admin',
-        password: '1234567890'
-    },
-    {
-        id: 2,
-        username: 'staff',
-        role: 'staff',
-        password: '1234567890'
-    }
-    ];
-    const user = users.find(u => u.username === req.body.username && u.password === req.body.password);
-    if (!user) {
-        return res.status(401).json({ message: 'Invalid credentials' });
-    }
-
-    const token = jwt.sign({ username: user.username }, secret, { expiresIn: timeout });
-    return res.json({ token, timeout });
-});
+app.post('/api/login', login);
 
 app.get('/', (req, res) => {
     res.send('Hello World');
@@ -62,55 +40,20 @@ app.put('/api/user/:id', updateCustomer);
 app.get('/api/user/:id', getCustomer);
 app.delete('/api/user/:id', deleteCustomer);
 app.post('/api/card', createCard);
-app.post('/api/upload', function (req, res) {
-    if (!req.files || Object.keys(req.files).length === 0) {
-        return res.status(400).send('No files were uploaded.');
-    }
+app.post('/api/upload', uploadFile);
+app.get('/api/download/:filename', downloadFile);
 
-    const sampleFile = req.files.file;
-    const uploadPath = `./uploads/${sampleFile.name}`;
-    try {
-        fs.writeFile(uploadPath, new Uint8Array(sampleFile.data),(err)=>{
-            if(err){
-                throw err;
-            }
-            res.send({
-                message:"Upload successful!"
-            })
-        });
-    } catch (ex) {
-        return res.status(500).send('Error reading file 2');
-    }
-
-    // sampleFile.mv(uploadPath, (err) => {
-    //     if (err) {
-    //         return res.status(500).send(err);
-    //     }
-
-    //     fs.readFile(uploadPath, 'utf8', (err, data) => {
-    //         if (err) {
-    //             return res.status(500).send('Error reading file');
-    //         }
-    //         res.send(data);
-    //     });
-    // });
-});
-// Endpoint to return a file
-app.get('/api/download/:filename', (req, res) => {
-    const filename = req.params.filename;
-    const filePath = `./uploads/${filename}`;
-
-    res.download(filePath, (err) => {
-        if (err) {
-            return res.status(500).send('Error downloading file');
-        }
-    });
-});
 app.listen(port, () => {
     init();
-    mkdir('./uploads', (err)=>{
-        if(err){
-            throw err;
+    mkdir(folderPath, (err) => {
+        if (err) {
+            if (err.code === 'EEXIST') {
+                console.log('Folder already exists:', folderPath);
+            } else {
+                console.error('Error creating folder:', err);
+            }
+        } else {
+            console.log('Folder created successfully:', folderPath);
         }
     })
     console.log(`Server is running on port ${port}`);

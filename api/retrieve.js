@@ -91,7 +91,7 @@ export const getCountriesWithPagination = (req, res) => {
 export const getCountriesWithPrivate = (req, res) => {
     if (req.headers["api-key"] === 'private') {
         res.json(countriesWithPrivate);
-    }else{
+    } else {
         res.json(countriesWithGdp)
     }
 };

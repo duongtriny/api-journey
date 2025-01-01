@@ -45,16 +45,5 @@ app.get('/api/download/:filename', downloadFile);
 
 app.listen(port, () => {
     init();
-    mkdir(folderPath, (err) => {
-        if (err) {
-            if (err.code === 'EEXIST') {
-                console.log('Folder already exists:', folderPath);
-            } else {
-                console.error('Error creating folder:', err);
-            }
-        } else {
-            console.log('Folder created successfully:', folderPath);
-        }
-    })
     console.log(`Server is running on port ${port}`);
 });
